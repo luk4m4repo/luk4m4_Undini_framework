@@ -16,7 +16,7 @@ It coordinates the execution of multiple scripts in sequence to generate procedu
 Each function can be called individually or the entire pipeline can be executed in sequence.
 
 Example usage:
-    - Set the desired iteration_number
+    - Set the desired iteration_number and paths below
     - Call the functions in sequence or individually
     - Monitor the progress through the log messages
 """
@@ -25,6 +25,33 @@ import unreal
 import os
 import subprocess
 import time
+
+# ======================================================================
+# CONFIGURATION - MODIFY THESE SETTINGS AS NEEDED
+# ======================================================================
+
+# Current iteration number for the procedural generation
+ITERATION_NUMBER = 0
+
+# Houdini installation path
+HOUDINI_INSTALL_PATH = r"C:/Program Files/Side Effects Software/Houdini 20.0.653"
+HOUDINI_PYTHON_PATH = os.path.join(HOUDINI_INSTALL_PATH, "bin", "hython.exe")
+
+# Houdini .hip file paths
+HOUDINI_PCG_HIP_PATH = r"C:/Users/luka.croisez/Documents/Houdini/genbuildingbase3.hip"  # PCG generation
+HOUDINI_SWR_HIP_PATH = r"C:/Users/luka.croisez/Documents/Houdini/sidewalks.hip"         # Sidewalks & Roads
+
+# Topnet node paths in Houdini
+HOUDINI_PCG_TOPNET_PATH = "/obj/geo1/topnet"
+HOUDINI_SWR_TOPNET_PATH = "/obj/geo1/topnet"
+
+# Switch boolean values for Houdini generation modes
+PCG_SWITCH_BOOL_VALUE = 1
+SWR_SWITCH_BOOL_VALUE = 1
+
+# ======================================================================
+# WORKSPACE SETUP - DO NOT MODIFY UNLESS NECESSARY
+# ======================================================================
 
 # Define the workspace root relative to this script
 WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -38,7 +65,7 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 genzone_export_script = os.path.join(SCRIPTS_DIR, "010_export_gz_to_mod.py")
 
-def call_export_genzone_meshes(iteration_number=0):
+def call_export_genzone_meshes(iteration_number=None):
     """
     Run the GenZone Static Mesh export script with the given iteration_number.
     
@@ -46,11 +73,15 @@ def call_export_genzone_meshes(iteration_number=0):
     appending the iteration_number to each exported file for proper versioning.
     
     Args:
-        iteration_number (int): The current iteration number to append to exported files
+        iteration_number (int, optional): The current iteration number to append to exported files.
+                                          If None, uses the global ITERATION_NUMBER.
     
     Returns:
         bool: True if export was successful, False otherwise
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n🏙️ === EXPORTING GENZONE MESHES (ITERATION {iteration_number}) === 🏙️")
     
     try:
@@ -80,7 +111,7 @@ def call_export_genzone_meshes(iteration_number=0):
 # Houdini Headless Script - PCG HD (Procedural Content Generation)
 # ======================================================================
 
-def run_houdini_pcg_generation(iteration_number=0, switch_bool_value=1):
+def run_houdini_pcg_generation(iteration_number=None, switch_bool_value=None):
     """
     Run Houdini in headless mode to generate PCG (Procedural Content Generation) data.
     
@@ -88,22 +119,25 @@ def run_houdini_pcg_generation(iteration_number=0, switch_bool_value=1):
     CSV files containing mesh and material data for PCG graphs.
     
     Args:
-        iteration_number (int): The current iteration number for file naming
-        switch_bool_value (int): Switch to control generation mode (0 or 1)
+        iteration_number (int, optional): The current iteration number for file naming. If None, uses ITERATION_NUMBER.
+        switch_bool_value (int, optional): Switch to control generation mode (0 or 1). If None, uses PCG_SWITCH_BOOL_VALUE.
         
     Returns:
         subprocess.Popen: The process object for the Houdini subprocess
     """
+    # Use global configuration if parameters are not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
+    if switch_bool_value is None:
+        switch_bool_value = PCG_SWITCH_BOOL_VALUE
+        
     unreal.log(f"\n🌍 === RUNNING HOUDINI PCG GENERATION (ITERATION {iteration_number}) === 🌍")
     
-    # Define paths for Houdini execution
-    hython_path = r"C:/Program Files/Side Effects Software/Houdini 20.0.653/bin/hython.exe"
+    # Use paths from global configuration
+    hython_path = HOUDINI_PYTHON_PATH
     houdini_script = os.path.join(SCRIPTS_DIR, "100_headless_topnet_PCGHD.py")
-    
-    # Define Houdini scene file and topnet path
-    # Note: This should be updated to use relative paths if possible
-    hip_file_path = os.path.join(WORKSPACE_ROOT, ".." , "03_GenDatas", "Houdini", "genbuildingbase3.hip")
-    topnet_path = "/obj/geo1/topnet"
+    hip_file_path = HOUDINI_PCG_HIP_PATH
+    topnet_path = HOUDINI_PCG_TOPNET_PATH
     
     # Define input/output paths relative to workspace root
     gen_data_dir = os.path.join(WORKSPACE_ROOT, ".." , "03_GenDatas")
@@ -154,7 +188,7 @@ def run_houdini_pcg_generation(iteration_number=0, switch_bool_value=1):
 # Houdini Headless Script - Sidewalks & Roads Generation
 # ======================================================================
 
-def run_houdini_sidewalks_roads_generation(iteration_number=0, switch_bool_value=1):
+def run_houdini_sidewalks_roads_generation(iteration_number=None, switch_bool_value=None):
     """
     Run Houdini in headless mode to generate sidewalks and roads.
     
@@ -162,22 +196,25 @@ def run_houdini_sidewalks_roads_generation(iteration_number=0, switch_bool_value
     FBX files for sidewalks and roads that can be imported back into Unreal.
     
     Args:
-        iteration_number (int): The current iteration number for file naming
-        switch_bool_value (int): Switch to control road generation mode (0 or 1)
+        iteration_number (int, optional): The current iteration number for file naming. If None, uses ITERATION_NUMBER.
+        switch_bool_value (int, optional): Switch to control road generation mode (0 or 1). If None, uses SWR_SWITCH_BOOL_VALUE.
         
     Returns:
         subprocess.Popen: The process object for the Houdini subprocess
     """
+    # Use global configuration if parameters are not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
+    if switch_bool_value is None:
+        switch_bool_value = SWR_SWITCH_BOOL_VALUE
+        
     unreal.log(f"\n🛣️ === RUNNING HOUDINI SIDEWALKS & ROADS GENERATION (ITERATION {iteration_number}) === 🛣️")
     
-    # Define paths for Houdini execution
-    hython_path = r"C:/Program Files/Side Effects Software/Houdini 20.0.653/bin/hython.exe"
+    # Use paths from global configuration
+    hython_path = HOUDINI_PYTHON_PATH
     houdini_script = os.path.join(SCRIPTS_DIR, "200_headless_topnet_SWR.py")
-    
-    # Define Houdini scene file and topnet path
-    # Note: This should be updated to use relative paths if possible
-    hip_file_path = os.path.join(WORKSPACE_ROOT, ".." , "03_GenDatas", "Houdini", "sidewalks.hip")
-    topnet_path = "/obj/geo1/topnet"
+    hip_file_path = HOUDINI_SWR_HIP_PATH
+    topnet_path = HOUDINI_SWR_TOPNET_PATH
     
     # Define input/output paths relative to workspace root
     gen_data_dir = os.path.join(WORKSPACE_ROOT, ".." , "03_GenDatas")
@@ -226,7 +263,7 @@ def run_houdini_sidewalks_roads_generation(iteration_number=0, switch_bool_value
 # CSV Reimport for DataTables
 # ======================================================================
 
-def call_reimport_all_datatables(iteration_number=0, csv_dir=None):
+def call_reimport_all_datatables(iteration_number=None, csv_dir=None):
     """
     Reimport CSV data into Unreal Engine DataTables.
     
@@ -234,12 +271,16 @@ def call_reimport_all_datatables(iteration_number=0, csv_dir=None):
     CSV files containing mesh and material data into Unreal Engine DataTables.
     
     Args:
-        iteration_number (int): The current iteration number for file naming
+        iteration_number (int, optional): The current iteration number for file naming.
+                                          If None, uses the global ITERATION_NUMBER.
         csv_dir (str, optional): Directory containing CSV files. If None, uses default path
         
     Returns:
         int: Number of successfully processed DataTables
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n📃 === REIMPORTING CSV DATA TO DATATABLES (ITERATION {iteration_number}) === 📃")
     
     # Define the script path
@@ -283,7 +324,7 @@ def call_reimport_all_datatables(iteration_number=0, csv_dir=None):
 # Splines to JSON Export
 # ======================================================================
 
-def call_export_splines_to_json(iteration_number=0, output_dir=None):
+def call_export_splines_to_json(iteration_number=None, output_dir=None):
     """
     Export splines from the current Unreal Engine level to JSON format.
     
@@ -291,12 +332,16 @@ def call_export_splines_to_json(iteration_number=0, output_dir=None):
     all spline components in the current level and exports their data to a JSON file.
     
     Args:
-        iteration_number (int): The current iteration number for file naming
+        iteration_number (int, optional): The current iteration number for file naming.
+                                          If None, uses the global ITERATION_NUMBER.
         output_dir (str, optional): Directory to save the JSON file. If None, uses default path
         
     Returns:
         dict: Information about the exported splines including count and file path
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n🖌️ === EXPORTING SPLINES TO JSON (ITERATION {iteration_number}) === 🖌️")
     
     # Define the script path
@@ -343,7 +388,7 @@ def call_export_splines_to_json(iteration_number=0, output_dir=None):
 # PCG Graph Creation and Placement
 # ======================================================================
 
-def call_create_and_add_pcg_graph(iteration_number=0):
+def call_create_and_add_pcg_graph(iteration_number=None):
     """
     Create a new PCG graph blueprint and add it to the current level.
     
@@ -351,11 +396,15 @@ def call_create_and_add_pcg_graph(iteration_number=0):
     a template PCG blueprint, renames it with the iteration number, and places it in the level.
     
     Args:
-        iteration_number (int): The current iteration number for blueprint naming
+        iteration_number (int, optional): The current iteration number for blueprint naming.
+                                          If None, uses the global ITERATION_NUMBER.
         
     Returns:
         unreal.Blueprint: The newly created blueprint asset, or None if creation failed
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n🗺️ === CREATING PCG GRAPH BLUEPRINT (ITERATION {iteration_number}) === 🗺️")
     
     # Define the script path
@@ -392,7 +441,7 @@ def call_create_and_add_pcg_graph(iteration_number=0):
 # Add Sidewalks & Roads to Level
 # ======================================================================
 
-def call_add_SM_sidewalks_and_roads_to_level(iteration_number=0):
+def call_add_SM_sidewalks_and_roads_to_level(iteration_number=None):
     """
     Add sidewalks and roads static meshes to the current level.
     
@@ -401,11 +450,15 @@ def call_add_SM_sidewalks_and_roads_to_level(iteration_number=0):
     and adds them to the current level in organized folders.
     
     Args:
-        iteration_number (int): The current iteration number for finding the correct static meshes
+        iteration_number (int, optional): The current iteration number for finding the correct static meshes.
+                                          If None, uses the global ITERATION_NUMBER.
         
     Returns:
         dict: Information about the added static meshes including counts and paths
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n🛣️ === ADDING SIDEWALKS & ROADS TO LEVEL (ITERATION {iteration_number}) === 🛣️")
     
     # Define the script path
@@ -448,7 +501,7 @@ def call_add_SM_sidewalks_and_roads_to_level(iteration_number=0):
 # Reimport Static Meshes
 # ======================================================================
 
-def call_reimport_folder_static_meshes(iteration_number=0, fbx_dir=None):
+def call_reimport_folder_static_meshes(iteration_number=None, fbx_dir=None):
     """
     Reimport static meshes from FBX files into Unreal Engine.
     
@@ -456,12 +509,16 @@ def call_reimport_folder_static_meshes(iteration_number=0, fbx_dir=None):
     FBX files in the specified directory and reimports them as static meshes.
     
     Args:
-        iteration_number (int): The current iteration number for finding the correct FBX files
+        iteration_number (int, optional): The current iteration number for finding the correct FBX files.
+                                          If None, uses the global ITERATION_NUMBER.
         fbx_dir (str, optional): Directory containing FBX files. If None, uses default path
         
     Returns:
         dict: Information about the reimported static meshes including counts and paths
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n🏗️ === REIMPORTING STATIC MESHES (ITERATION {iteration_number}) === 🏗️")
     
     # Define the script path
@@ -508,18 +565,23 @@ def call_reimport_folder_static_meshes(iteration_number=0, fbx_dir=None):
 # Main Pipeline Function
 # ======================================================================
 
-def run_full_pipeline(iteration_number=0):
+def run_full_pipeline(iteration_number=None):
     """
     Run the complete procedural generation pipeline from start to finish.
     
     This function executes all steps of the pipeline in sequence with the specified iteration number.
+    If no iteration number is provided, it uses the global ITERATION_NUMBER defined at the top of this file.
     
     Args:
-        iteration_number (int): The iteration number to use for all pipeline steps
+        iteration_number (int, optional): The iteration number to use for all pipeline steps.
+                                          If None, uses the global ITERATION_NUMBER.
         
     Returns:
         dict: Summary of the pipeline execution with success/failure status for each step
     """
+    # Use global configuration if parameter is not provided
+    if iteration_number is None:
+        iteration_number = ITERATION_NUMBER
     unreal.log(f"\n🌐 === STARTING FULL PIPELINE (ITERATION {iteration_number}) === 🌐")
     unreal.log(f"Starting time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     

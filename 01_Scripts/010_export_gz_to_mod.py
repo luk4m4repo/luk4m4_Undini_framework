@@ -2,60 +2,73 @@ import unreal
 import os
 
 # Define the root directory of the workspace and the export directory for FBX files
+# This is used when the script is run standalone, otherwise the export_dir parameter is used
 WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# Use the same path structure as other scripts
-EXPORT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Mod")  # Absolute path
+
+# Default export directory - follows the same structure as in the manager script
+# This is where we'll save the FBX files that will be used by Houdini
+DEFAULT_EXPORT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Mod")
 
 
 def get_all_static_meshes_in_level():
     """
     Finds all unique Static Mesh assets used by StaticMeshActors in the current Unreal level whose name contains 'genzone'.
     Returns a list of meshes that match.
-
-    This function is the core of our export process. It searches the current level for Static Mesh Actors that contain
-    'genzone' in their name, and returns a list of unique Static Mesh assets used by those actors.
+    
+    This is the second step in our pipeline - after exporting splines, we need to export the GenZone meshes
+    that will be used by Houdini for procedural generation. This function identifies which meshes need to be exported.
+    
+    The function looks for both actors with 'genzone' in their name and meshes with 'genzone' in their name,
+    ensuring we catch all relevant assets regardless of how they're named in the level.
     """
-    # Get the editor actor subsystem to access level actors
+    # First, let's access all actors in the current level
+    unreal.log("🔍 Starting search for GenZone meshes in the current level...")
     editor_actor_subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
-    # Get all actors in the current level
     all_actors = editor_actor_subsystem.get_all_level_actors()
-    # Initialize a set to store unique static meshes
+    
+    # We'll use a set to automatically eliminate duplicates
     static_meshes = set()
-    # Initialize a counter for debugging
+    
+    # Keep track of some stats for reporting
     total_static_mesh_actors = 0
     genzone_actors = 0
     
-    unreal.log(f"Searching for genzone meshes in the current level...")
-    
-    # Iterate over all actors in the level
+    # Now let's go through all actors and find the ones we need
     for actor in all_actors:
-        # Only consider StaticMeshActor (not Blueprints, etc)
+        # We only care about StaticMeshActors (not Blueprints, Lights, etc.)
         if isinstance(actor, unreal.StaticMeshActor):
             total_static_mesh_actors += 1
             actor_name = actor.get_actor_label()
             
-            # Check if the actor name contains 'genzone' (case-insensitive)
+            # First check: Is 'genzone' in the actor's name?
             if 'genzone' in actor_name.lower():
                 genzone_actors += 1
-                unreal.log(f"Found genzone actor: {actor_name}")
+                unreal.log(f"Found GenZone actor: {actor_name}")
                 
-            # Get the static mesh component of the actor
+            # Now let's check the actual mesh asset
             sm_comp = actor.static_mesh_component
             if sm_comp:
-                # Get the static mesh asset
                 mesh = sm_comp.static_mesh
                 if mesh:
                     mesh_name = mesh.get_name()
-                    # Check if either the mesh name or actor name contains 'genzone' (case-insensitive)
+                    
+                    # Second check: Is 'genzone' in either the actor name OR the mesh name?
+                    # This catches cases where the mesh name contains 'genzone' but the actor doesn't
                     if ('genzone' in mesh_name.lower()) or ('genzone' in actor_name.lower()):
-                        # Add the mesh to the set of unique meshes
+                        # Add this mesh to our export list (the set automatically prevents duplicates)
                         static_meshes.add(mesh)
-                        unreal.log(f"Added mesh to export list: {mesh_name} (from actor {actor_name})")
+                        unreal.log(f"✅ Added to export list: {mesh_name} (from actor {actor_name})")
     
-    # Log debug information
-    unreal.log(f"Total static mesh actors in level: {total_static_mesh_actors}")
-    unreal.log(f"Actors with 'genzone' in name: {genzone_actors}")
-    unreal.log(f"Unique meshes to export: {len(static_meshes)}")
+    # Let's summarize what we found
+    unreal.log(f"\n📊 Search summary:")
+    unreal.log(f"  • Total static mesh actors in level: {total_static_mesh_actors}")
+    unreal.log(f"  • Actors with 'genzone' in name: {genzone_actors}")
+    unreal.log(f"  • Unique meshes to export: {len(static_meshes)}")
+    
+    if len(static_meshes) == 0:
+        unreal.log_warning("⚠️ No GenZone meshes found! Make sure you have GenZone actors in your level.")
+    else:
+        unreal.log(f"🔍 Found {len(static_meshes)} unique GenZone meshes to export.")
     
     # Return the list of unique static meshes
     return list(static_meshes)
@@ -64,81 +77,166 @@ def get_all_static_meshes_in_level():
 def export_static_mesh_to_fbx(static_mesh, export_dir, iteration_number):
     """
     Exports a given static mesh to FBX format with a filename that includes the mesh name and iteration number.
-    Returns True if successful, False otherwise.
-
-    This function takes a Static Mesh asset, an export directory, and an iteration number, and exports the mesh to
-    FBX format. The filename includes the mesh name and iteration number.
+    
+    This function handles the actual export of each GenZone mesh to FBX format. The exported FBX files
+    will be used by Houdini when switch_bool is set to 1 in the pipeline. The filename format
+    (meshname_iterationnumber.fbx) is important for the rest of the pipeline to work correctly.
+    
+    Args:
+        static_mesh: The Unreal Engine static mesh asset to export
+        export_dir: Directory where the FBX file will be saved
+        iteration_number: The current iteration number to append to the filename
+        
+    Returns:
+        bool: True if the export was successful, False otherwise
     """
-    # Get the name of the static mesh
+    # First, get the name of the mesh we're exporting
     mesh_name = static_mesh.get_name()
-    # Construct the export path for the FBX file
+    
+    # Create the full path where we'll save the FBX file
+    # The naming convention meshname_iterationnumber.fbx is important for the pipeline
     export_path = os.path.join(export_dir, f"{mesh_name}_{iteration_number}.fbx")
-    # Set up FBX export options
+    unreal.log(f"Preparing to export {mesh_name} to {export_path}")
+    
+    # Configure the FBX export options for best compatibility with Houdini
+    # These settings are optimized for our pipeline
     fbx_options = unreal.FbxExportOption()
-    fbx_options.collision = False
-    fbx_options.vertex_color = True
-    fbx_options.level_of_detail = False
-    fbx_options.fbx_export_compatibility = unreal.FbxExportCompatibility.FBX_2020
-    # Create an asset export task for the static mesh
+    fbx_options.collision = False        # We don't need collision data
+    fbx_options.vertex_color = True      # Preserve vertex colors if present
+    fbx_options.level_of_detail = False  # Don't include LODs
+    fbx_options.fbx_export_compatibility = unreal.FbxExportCompatibility.FBX_2020  # Use FBX 2020 format
+    
+    # Set up the export task with our configured options
     export_task = unreal.AssetExportTask()
     export_task.object = static_mesh
     export_task.filename = export_path
-    export_task.automated = True
-    export_task.replace_identical = True
-    export_task.prompt = False
+    export_task.automated = True         # Run without user interaction
+    export_task.replace_identical = True  # Overwrite existing files
+    export_task.prompt = False           # Don't show any prompts
     export_task.options = fbx_options
     try:
-        # Run the asset export task
+        # Now let's actually perform the export
+        unreal.log(f"Exporting {mesh_name}...")
         result = unreal.Exporter.run_asset_export_task(export_task)
+        
         if result:
-            # Log a success message with a party popper emoji
+            # Success! Let the user know
             unreal.log(f"🎉 Successfully exported {mesh_name} to {export_path}!")
+            
+            # Verify the file was actually created
+            if os.path.exists(export_path):
+                file_size = os.path.getsize(export_path)
+                unreal.log(f"   File size: {file_size / 1024:.1f} KB")
+            else:
+                # This should never happen if result is True, but just in case
+                unreal.log_warning(f"⚠️ Export reported success but file not found at {export_path}")
+                return False
         else:
-            # Log an error message with a warning sign emoji
+            # Something went wrong with the export
             unreal.log_error(f"⚠️ Failed to export {mesh_name}. Please check the export settings and try again.")
+            unreal.log_error(f"   This might be due to the mesh being invalid or having unsupported features.")
+        
         return result
     except Exception as e:
-        # Log an error message with a red cross emoji
-        unreal.log_error(f"❌ An error occurred while exporting {mesh_name}: {str(e)}")
+        # An unexpected error occurred
+        unreal.log_error(f"❌ An error occurred while exporting {mesh_name}:")
+        unreal.log_error(f"   Error details: {str(e)}")
         return False
 
 
-def main(iteration_number=0):
+def main(iteration_number=0, export_dir=None):
     """
     Main entry point: exports all 'genzone' static meshes in the current level to FBX files.
-
-    This function is the main entry point of our script. It checks if the export directory exists, gets all static
-    meshes in the level with 'genzone' in their name, and exports each mesh to FBX format.
+    
+    This is the second step in our pipeline - after exporting splines, we need to export the GenZone meshes
+    that will be used by Houdini for procedural generation when switch_bool is set to 1.
+    
+    Args:
+        iteration_number (int): The current iteration number for file naming (default: 0)
+        export_dir (str): Optional directory to save the FBX files. If None, uses DEFAULT_EXPORT_DIR
+        
+    Returns:
+        dict: Information about the export process including success count and export directory
     """
-    # Check if the export directory exists
-    if not os.path.exists(EXPORT_DIR):
+    # Create a result dictionary to return
+    result = {
+        'success_count': 0,
+        'total_count': 0,
+        'export_dir': None
+    }
+    
+    # Determine which export directory to use
+    if export_dir is None:
+        export_dir = DEFAULT_EXPORT_DIR
+        unreal.log(f"Using default export directory: {export_dir}")
+    else:
+        unreal.log(f"Using specified export directory: {export_dir}")
+    
+    # Store the export directory in the result
+    result['export_dir'] = export_dir
+    
+    # Make sure the export directory exists
+    if not os.path.exists(export_dir):
         try:
-            # Create the export directory if it doesn't exist
-            os.makedirs(EXPORT_DIR, exist_ok=True)
-            # Log a message indicating the directory was created
-            unreal.log(f"Created export directory: {EXPORT_DIR}")
+            os.makedirs(export_dir, exist_ok=True)
+            unreal.log(f"📁 Created export directory: {export_dir}")
         except Exception as e:
-            # Log an error message if directory creation fails
-            unreal.log_error(f"Couldn't create export directory '{EXPORT_DIR}'. Error: {str(e)}")
-            return
-    # Get all static meshes in the level with 'genzone' in their name
+            unreal.log_error(f"❌ Couldn't create export directory '{export_dir}'. Error: {str(e)}")
+            return result
+    
+    # Find all GenZone meshes in the current level
+    unreal.log("\n🔍 Looking for GenZone meshes to export...")
     meshes = get_all_static_meshes_in_level()
+    
+    # Update the result with the total count
+    result['total_count'] = len(meshes)
+    
+    # Check if we found any meshes
     if not meshes:
-        # Log a warning message if no meshes are found
-        unreal.log_warning("No Static Meshes with 'genzone' in the name found in the current level. Nothing to export!")
-        return
-    # Log a message indicating the number of meshes found
-    unreal.log(f"Found {len(meshes)} unique Static Mesh assets with 'genzone' in the name.")
-    # Initialize a counter for successful exports
+        unreal.log_warning("⚠️ No GenZone meshes found in the current level. Nothing to export!")
+        return result
+    
+    # Start the export process
+    unreal.log(f"\n📦 Starting export of {len(meshes)} GenZone meshes to FBX format...")
+    
+    # Keep track of successful exports
     success_count = 0
-    # Iterate over the meshes and export each one
+    
+    # Export each mesh
     for mesh in meshes:
-        if export_static_mesh_to_fbx(mesh, EXPORT_DIR, iteration_number):
-            # Increment the success counter if the export is successful
+        if export_static_mesh_to_fbx(mesh, export_dir, iteration_number):
             success_count += 1
-    # Log a message indicating the export is complete
-    unreal.log(f"✅ Export complete: {success_count}/{len(meshes)} meshes exported to {EXPORT_DIR}")
+    
+    # Update the result with the success count
+    result['success_count'] = success_count
+    
+    # Summarize the results
+    if success_count == len(meshes):
+        unreal.log(f"\n✅ Export complete: All {success_count} meshes successfully exported to {export_dir}")
+    else:
+        unreal.log(f"\n⚠️ Export partially complete: {success_count}/{len(meshes)} meshes exported to {export_dir}")
+        if success_count == 0:
+            unreal.log_error("❌ All exports failed! Check the log for error details.")
+    
+    return result
 
 
 if __name__ == "__main__":
-    main(0)
+    # When run as a standalone script, we'll use environment variables or defaults
+    unreal.log("🔹 Starting GenZone mesh export script...")
+    
+    # Get the iteration number from the environment variable, or use 0 if not set
+    iteration_number = int(os.environ.get("ITERATION_NUMBER", 0))
+    unreal.log(f"Using iteration number: {iteration_number}")
+    
+    # Call the main function with the iteration number
+    result = main(iteration_number)
+    
+    # Report the final status
+    if result['success_count'] > 0:
+        unreal.log(f"🔹 GenZone mesh export completed with {result['success_count']}/{result['total_count']} successful exports.")
+    else:
+        unreal.log_error("🔹 GenZone mesh export failed. Please check the logs for details.")
+    
+    # This helps to visually separate this script's output from the next script in the pipeline
+    unreal.log("\n" + "-" * 80 + "\n")

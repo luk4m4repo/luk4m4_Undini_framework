@@ -248,13 +248,16 @@ def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path):
 #unreal.log(f"Reimport datatables result: {result}")
 
 # Create PCG graph (uncomment to use)
-result = run_script("120_create_pcg_graph.py", "create_pcg_graph",
-         iteration_number=ITERATION_NUMBER,
-         template_bp_path=UE_PCG_TEMPLATE_BP_PATH)
-unreal.log(f"Create PCG graph result: {result}")
+#result = run_script("120_create_pcg_graph.py", "create_pcg_graph",
+#         iteration_number=ITERATION_NUMBER,
+#         template_bp_path=UE_PCG_TEMPLATE_BP_PATH)
+#unreal.log(f"Create PCG graph result: {result}")
 
 # Run Houdini sidewalks & roads generation (uncomment to use)
-def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file_path):
+def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file_path=None):
+    # Use SWR_HIP_FILE_PATH if hip_file_path is not provided
+    if hip_file_path is None:
+        hip_file_path = SWR_HIP_FILE_PATH
     """Run Houdini in headless mode to generate sidewalks and roads"""
     try:
         unreal.log(f"Starting Houdini sidewalks & roads generation with iteration number: {iteration_number}")
@@ -306,7 +309,17 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
         unreal.log(f"Normalized splines base path: {splines_base_path}")
         
         # Build the command to run Houdini in headless mode
-        cmd = [
+        # Important: Use a string with proper quoting instead of a list to avoid issues with script path parsing
+        cmd_str = f'"{hython_path}" "{headless_script}" --hip "{hip_file_path}" --topnet "/obj/geo1/topnet" --rop_fbx_road_path "{road_fbx_path}" --rop_fbx_sidewalks_path "{sidewalks_fbx_path}" --iteration_number {iteration_number} --switch_bool {SWITCH_BOOL}'
+        
+        # Check if we need to add a file1_path parameter for input geometry
+        splines_json_path = normalize_path(os.path.join(SPLINES_OUTPUT_DIR, f"splines_export_from_UE_{iteration_number}.json"))
+        if os.path.exists(splines_json_path):
+            cmd_str += f' --file1_path "{splines_json_path}"'
+            unreal.log(f"Adding splines JSON file path: {splines_json_path}")
+        
+        # For logging purposes, also create the command as a list
+        cmd_list = [
             hython_path,
             headless_script,
             "--hip", hip_file_path,
@@ -315,13 +328,14 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
             "--rop_fbx_sidewalks_path", sidewalks_fbx_path,
             "--iteration_number", str(iteration_number),
             "--switch_bool", str(SWITCH_BOOL)
-            # Remove arguments that aren't recognized by the original script
-            # "--ignore_load_warnings",
-            # "--splines_base_path", splines_base_path
         ]
         
+        # Add file1_path to cmd_list if it exists
+        if os.path.exists(splines_json_path):
+            cmd_list.extend(["--file1_path", splines_json_path])
+        
         unreal.log(f"Launching Houdini sidewalks & roads generation...")
-        unreal.log(f"Command: {' '.join(cmd)}")
+        unreal.log(f"Command: {' '.join(cmd_list)}")
         
         # Check if the splines directory exists and has files
         splines_dir = os.path.dirname(splines_base_path)
@@ -337,13 +351,15 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
                 unreal.log_warning(f"You may need to run the spline export script first")
                 unreal.log_warning(f"Available spline files: {spline_files}")
         
-        # Run the command without creating a new console, to capture output
-        unreal.log("Running Houdini process and capturing output...")
+        # Run the command - don't create a new console window when running from UE
+        unreal.log("Running Houdini process...")
         process = subprocess.Popen(
-            cmd,
+            cmd_str,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            universal_newlines=True
+            universal_newlines=True,
+            shell=True  # Required when passing a command string instead of a list
+            # No creationflags - this causes issues when running as a subprocess from UE
         )
         
         # Wait a short time and check if process is still running
@@ -399,12 +415,12 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
         return None
 
 # Run Houdini sidewalks & roads generation
-#result = run_houdini_sidewalks_roads(
-#     iteration_number=ITERATION_NUMBER,
-#     houdini_install_path=HOUDINI_INSTALL_PATH,
-#     hip_file_path=SWR_HIP_FILE_PATH
-#)
-#unreal.log(f"Houdini sidewalks & roads generation result: {result}")
+result = run_houdini_sidewalks_roads(
+     iteration_number=ITERATION_NUMBER,
+     houdini_install_path=HOUDINI_INSTALL_PATH,
+     hip_file_path=SWR_HIP_FILE_PATH
+)
+unreal.log(f"Houdini sidewalks & roads generation result: {result}")
 
 # Reimport static meshes
 #result = run_script("210_reimport_SM.py", "reimport_folder_static_meshes",

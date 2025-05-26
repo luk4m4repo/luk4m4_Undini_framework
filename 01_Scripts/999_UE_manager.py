@@ -32,9 +32,16 @@ HOUDINI_INSTALL_PATH = r"C:/Program Files/Side Effects Software/Houdini 20.0.653
 HIP_FILE_PATH = r"C:/Users/luka.croisez/Documents/GitHub/lcroisez_Undini_framework/04_Houdini/genbuildingbase3.hip"
 # HIP file for sidewalks and roads generation
 SWR_HIP_FILE_PATH = r"C:/Users/luka.croisez/Documents/GitHub/lcroisez_Undini_framework/04_Houdini/sidewalks_roads.hip"
+# Function to generate the file1 path with the current iteration number
+def get_file1_path(iteration_number):
+    return f"{WORKSPACE_ROOT}/03_GenDatas/Dependancies/PCG_HD/In/GZ/Mod/SM_genzones_PCG_HD_{iteration_number}.fbx"
+
+# Default file1 path (will be set dynamically with the iteration number)
+FILE1_PATH = get_file1_path(ITERATION_NUMBER)
 
 # Output directories
 SPLINES_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Splines")
+SPLINES_BASEPATH_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Splines", "splines_export_from_UE_")
 CSV_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "Out", "CSV")
 FBX_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "Out", "FBX")
 # Directory for sidewalks and roads FBX files
@@ -101,7 +108,10 @@ def run_script(script_name, function_name, **kwargs):
 
 # Run Houdini PCG generation
 
-def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path):
+def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path, file1_path=None, base_path=None, switch_bool=None):
+    # Use global SWITCH_BOOL if switch_bool is not provided
+    if switch_bool is None:
+        switch_bool = SWITCH_BOOL
     """Run Houdini in headless mode to generate PCG data"""
     try:
         unreal.log(f"Starting Houdini headless process with iteration number: {iteration_number}")
@@ -234,12 +244,15 @@ def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path):
 
 
 # Run Houdini PCG generation
-# result = run_houdini_headless(
-#     iteration_number=ITERATION_NUMBER,
-#     houdini_install_path=HOUDINI_INSTALL_PATH,
-#     hip_file_path=HIP_FILE_PATH
-# )
-# unreal.log(f"Houdini PCG generation result: {result}")
+result = run_houdini_headless(
+    iteration_number=ITERATION_NUMBER,
+    houdini_install_path=HOUDINI_INSTALL_PATH,
+    hip_file_path=HIP_FILE_PATH,
+    file1_path=FILE1_PATH,
+    base_path=SPLINES_BASEPATH_OUTPUT_DIR,
+    switch_bool=SWITCH_BOOL
+)
+unreal.log(f"Houdini PCG generation result: {result}")
 
 # Reimport datatables
 #result = run_script("110_reimport_datatable.py", "reimport_datatables",
@@ -254,7 +267,10 @@ def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path):
 #unreal.log(f"Create PCG graph result: {result}")
 
 # Run Houdini sidewalks & roads generation (uncomment to use)
-def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file_path=None):
+def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file_path=None, file1_path=None, base_path=None, switch_bool=None):
+    # Use global SWITCH_BOOL if switch_bool is not provided
+    if switch_bool is None:
+        switch_bool = SWITCH_BOOL
     # Use SWR_HIP_FILE_PATH if hip_file_path is not provided
     if hip_file_path is None:
         hip_file_path = SWR_HIP_FILE_PATH
@@ -310,13 +326,25 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
         
         # Build the command to run Houdini in headless mode
         # Important: Use a string with proper quoting instead of a list to avoid issues with script path parsing
-        cmd_str = f'"{hython_path}" "{headless_script}" --hip "{hip_file_path}" --topnet "/obj/geo1/topnet" --rop_fbx_road_path "{road_fbx_path}" --rop_fbx_sidewalks_path "{sidewalks_fbx_path}" --iteration_number {iteration_number} --switch_bool {SWITCH_BOOL}'
+        cmd_str = f'"{hython_path}" "{headless_script}" --hip "{hip_file_path}" --topnet "/obj/geo1/topnet" --rop_fbx_road_path "{road_fbx_path}" --rop_fbx_sidewalks_path "{sidewalks_fbx_path}" --iteration_number {iteration_number} --switch_bool {switch_bool}'
+        
+        # Add base_path parameter if provided
+        if base_path is not None:
+            base_path = normalize_path(base_path)
+            cmd_str += f' --base_path "{base_path}"'
+            unreal.log(f"Adding base_path: {base_path}")
         
         # Check if we need to add a file1_path parameter for input geometry
-        splines_json_path = normalize_path(os.path.join(SPLINES_OUTPUT_DIR, f"splines_export_from_UE_{iteration_number}.json"))
-        if os.path.exists(splines_json_path):
-            cmd_str += f' --file1_path "{splines_json_path}"'
-            unreal.log(f"Adding splines JSON file path: {splines_json_path}")
+        if file1_path is not None:
+            # Use the provided file1_path
+            file1_path = normalize_path(file1_path)
+            cmd_str += f' --file1_path "{file1_path}"'
+            unreal.log(f"Adding custom file1_path: {file1_path}")
+        else:
+            # Default
+            file_1_path = FILE1_PATH
+            cmd_str += f' --file1_path "{file_1_path}"'
+            unreal.log(f"Adding default file1_path: {file_1_path}")
         
         # For logging purposes, also create the command as a list
         cmd_list = [
@@ -327,12 +355,18 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
             "--rop_fbx_road_path", road_fbx_path,
             "--rop_fbx_sidewalks_path", sidewalks_fbx_path,
             "--iteration_number", str(iteration_number),
-            "--switch_bool", str(SWITCH_BOOL)
+            "--switch_bool", str(switch_bool)
         ]
         
-        # Add file1_path to cmd_list if it exists
-        if os.path.exists(splines_json_path):
+        # Add file1_path to cmd_list
+        if file1_path is not None:
+            cmd_list.extend(["--file1_path", file1_path])
+        elif os.path.exists(splines_json_path):
             cmd_list.extend(["--file1_path", splines_json_path])
+            
+        # Add base_path to cmd_list if provided
+        if base_path is not None:
+            cmd_list.extend(["--base_path", base_path])
         
         unreal.log(f"Launching Houdini sidewalks & roads generation...")
         unreal.log(f"Command: {' '.join(cmd_list)}")
@@ -415,12 +449,15 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
         return None
 
 # Run Houdini sidewalks & roads generation
-# result = run_houdini_sidewalks_roads(
-#     iteration_number=ITERATION_NUMBER,
-#     houdini_install_path=HOUDINI_INSTALL_PATH,
-#     hip_file_path=SWR_HIP_FILE_PATH
-# )
-# unreal.log(f"Houdini sidewalks & roads generation result: {result}")
+result = run_houdini_sidewalks_roads(
+    iteration_number=ITERATION_NUMBER,
+    houdini_install_path=HOUDINI_INSTALL_PATH,
+    hip_file_path=SWR_HIP_FILE_PATH,
+    file1_path=FILE1_PATH,
+    base_path=SPLINES_BASEPATH_OUTPUT_DIR,
+    switch_bool=SWITCH_BOOL
+)
+unreal.log(f"Houdini sidewalks & roads generation result: {result}")
 
 # Reimport static meshes
 # result = run_script("210_reimport_SM.py", "reimport_folder_static_meshes",
@@ -429,8 +466,8 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
 # unreal.log(f"Reimport static meshes result: {result}")
 
 # Add sidewalks & roads to level (uncomment to use)
-result = run_script("220_add_SM_to_lvl.py", "add_SM_sidewalks_and_roads_to_level",
-         iteration_number=ITERATION_NUMBER)
-unreal.log(f"Add sidewalks & roads result: {result}")
+# result = run_script("220_add_SM_to_lvl.py", "add_SM_sidewalks_and_roads_to_level",
+#         iteration_number=ITERATION_NUMBER)
+# unreal.log(f"Add sidewalks & roads result: {result}")
 
 unreal.log("Script execution completed")

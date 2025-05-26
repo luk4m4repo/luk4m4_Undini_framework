@@ -23,6 +23,7 @@ parser.add_argument('--rop_fbx_road_path', default=None, help="Value for the 'so
 parser.add_argument('--rop_fbx_sidewalks_path', default=None, help="Value for the 'sopoutput' parameter in /obj/geo1/rop_fbx_sidewalks")
 parser.add_argument('--iteration_number', type=int, default=None, help="Value for the 'iteration_number' parameter in /obj/geo1/python_import_splines_from_json")
 parser.add_argument('--switch_bool', type=int, default=0, help="Value for the 'input' parameter in /obj/geo1/switch_bool")
+parser.add_argument('--base_path', default=None, help="Value for the 'base_path' parameter in /obj/geo1/python_import_splines_from_json")
 args = parser.parse_args()
 
 print("*" * 80)
@@ -48,6 +49,14 @@ if args.file1_path is not None:
         print(f"Set /obj/geo1/file1.file to: {args.file1_path}")
     else:
         print("WARNING: Could not set /obj/geo1/file1.file (node or parm not found)")
+
+if args.base_path is not None:
+    python_node = hou.node('/obj/geo1/python_import_splines_from_json')
+    if python_node is not None and python_node.parm('base_path') is not None:
+        python_node.parm('base_path').set(args.base_path)
+        print(f"Set /obj/geo1/python_import_splines_from_json.base_path to: {args.base_path}")
+    else:
+        print("WARNING: Could not set /obj/geo1/python_import_splines_from_json.base_path (node or parm not found)")
 
 if args.rop_fbx_road_path is not None:
     rop_road_node = hou.node('/obj/geo1/rop_fbx_road')

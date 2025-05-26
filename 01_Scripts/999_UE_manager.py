@@ -43,12 +43,11 @@ FILE1_PATH = get_file1_path(ITERATION_NUMBER)
 SPLINES_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Splines")
 SPLINES_BASEPATH_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Splines", "splines_export_from_UE_")
 CSV_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "Out", "CSV")
-FBX_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "Out", "FBX")
 # Directory for sidewalks and roads FBX files
 SWR_FBX_OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "SW_Roads", "Out", "Mod")
 
 # Create necessary directories
-for directory in [SPLINES_OUTPUT_DIR, CSV_OUTPUT_DIR, FBX_OUTPUT_DIR, SWR_FBX_OUTPUT_DIR]:
+for directory in [SPLINES_OUTPUT_DIR, CSV_OUTPUT_DIR, SWR_FBX_OUTPUT_DIR]:
     os.makedirs(directory, exist_ok=True)
 
 # ======================================================================
@@ -172,11 +171,23 @@ def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path, 
             "--rop_pcg_export1_mesh_path", mesh_csv_path,
             "--rop_pcg_export1_mat_path", mat_csv_path,
             "--iteration_number", str(iteration_number),
-            "--switch_bool", str(SWITCH_BOOL)
+            "--switch_bool", str(switch_bool)
             # Remove arguments that aren't recognized by the original script
             # "--ignore_load_warnings",
             # "--splines_base_path", splines_base_path
         ]
+        
+        # Add file1_path to cmd if provided
+        if file1_path is not None:
+            # Use the provided file1_path
+            file1_path = normalize_path(file1_path)
+            cmd.extend(["--file1_path", file1_path])
+            unreal.log(f"Adding custom file1_path: {file1_path}")
+        else:
+            # Default
+            default_file1_path = normalize_path(FILE1_PATH)
+            cmd.extend(["--file1_path", default_file1_path])
+            unreal.log(f"Adding default file1_path: {default_file1_path}")
         
         unreal.log(f"Launching Houdini in headless mode...")
         unreal.log(f"Command: {' '.join(cmd)}")

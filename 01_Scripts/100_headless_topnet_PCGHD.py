@@ -92,7 +92,8 @@ if args.switch_bool is not None:
     if switch_bool_node is not None:
         # Try to set the parameter directly if it exists
         if switch_bool_node.parm('input') is not None:
-            switch_bool_node.parm('input').set(args.switch_bool)
+            # Convert to string when setting the parameter to avoid type errors
+            switch_bool_node.parm('input').set(str(args.switch_bool))
             print(f"Set /obj/geo1/switch_bool.input to: {args.switch_bool}")
         else:
             # If the parameter doesn't exist directly, it might be in the Python node's code

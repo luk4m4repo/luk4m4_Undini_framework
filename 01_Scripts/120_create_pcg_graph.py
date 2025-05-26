@@ -4,6 +4,26 @@ import unreal
 # PCG Graph Blueprint Creation Script
 # ======================================================================
 
+def create_pcg_graph(iteration_number=None, template_bp_path=None):
+    """Entry point function called by the manager script"""
+    print("About to call duplicate_and_rename_pcg_blueprint()")
+    
+    # Set default values if not provided
+    if iteration_number is None:
+        iteration_number = 1
+    
+    # Override the template path if provided
+    if template_bp_path is not None:
+        # Store the original path for debugging
+        original_path = duplicate_and_rename_pcg_blueprint.__defaults__[0]
+        print(f"Overriding template blueprint path from {original_path} to {template_bp_path}")
+        # Update the function's default parameter
+        global template_blueprint_path
+        template_blueprint_path = template_bp_path
+    
+    # Call the implementation function
+    return duplicate_and_rename_pcg_blueprint(iteration_number)
+
 def duplicate_and_rename_pcg_blueprint(iteration_number=0):
     """
     Creates a new Procedural Content Generation (PCG) graph for the current iteration.
@@ -21,8 +41,8 @@ def duplicate_and_rename_pcg_blueprint(iteration_number=0):
         unreal.Blueprint: The newly created blueprint asset, or None if the operation failed
     """
     # Define source and destination paths for the blueprint
-    template_blueprint_path = "/Game/Developers/lukacroisez/PCG_HD/BP/BP_PCG_HD_TEMPLATE.BP_PCG_HD_TEMPLATE"
-    destination_folder_path = "/Game/Developers/lukacroisez/PCG_HD/BP/BP_PCG_HD_inst"
+    template_blueprint_path = "/Game/luk4m4_Undini/BP/BP_PCG_HD_TEMPLATE.BP_PCG_HD_TEMPLATE"
+    destination_folder_path = "/Game/luk4m4_Undini/BP/BP_PCG_HD_inst"
     new_blueprint_name = f"BPi_PCG_HD_{iteration_number}"
     full_destination_path = f"{destination_folder_path}/{new_blueprint_name}"
 
@@ -32,13 +52,13 @@ def duplicate_and_rename_pcg_blueprint(iteration_number=0):
 
     # Validate that the template blueprint exists
     if not editor_asset_library.does_asset_exist(template_blueprint_path):
-        unreal.log_error(f"❌ Template blueprint not found: {template_blueprint_path}")
-        unreal.log_warning(f"⚠️ Please ensure the PCG template blueprint exists before running this script.")
+        unreal.log_error(f"Template blueprint not found: {template_blueprint_path}")
+        unreal.log_warning(f"Please ensure the PCG template blueprint exists before running this script.")
         return None
     
     # Attempt to duplicate the blueprint asset
     try:
-        unreal.log(f"🔄 Creating new PCG blueprint for iteration {iteration_number}...")
+        unreal.log(f"Creating new PCG blueprint for iteration {iteration_number}...")
         
         # Duplicate the template blueprint
         new_blueprint_asset = asset_tools_helper.duplicate_asset(
@@ -49,10 +69,10 @@ def duplicate_and_rename_pcg_blueprint(iteration_number=0):
         
         # Verify the duplication was successful
         if not new_blueprint_asset:
-            unreal.log_error(f"❌ Failed to duplicate blueprint from {template_blueprint_path} to {full_destination_path}")
+            unreal.log_error(f"Failed to duplicate blueprint from {template_blueprint_path} to {full_destination_path}")
             return None
             
-        unreal.log(f"✅ Successfully created new PCG blueprint: {full_destination_path}")
+        unreal.log(f"Successfully created new PCG blueprint: {full_destination_path}")
         
         # Attempt to spawn the blueprint in the current level
         try:

@@ -1,6 +1,6 @@
 # luk4m4_Undini_framework
 
-![Houdini](https://img.shields.io/badge/Houdini-20.0+-orange) ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.0+-blue) ![Python](https://img.shields.io/badge/Python-3.7+-green)
+![Houdini](https://img.shields.io/badge/Houdini-20.0+-orange) ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.0+-blue) ![Python](https://img.shields.io/badge/Python-3.7+-green) ![Version](https://img.shields.io/badge/Version-Beta%20v0.1-red)
 
 A comprehensive framework that simplifies the procedural generation pipeline between Houdini and Unreal Engine 5. This framework automates the exchange of data between the two applications, streamlining the creation of procedural environments.
 
@@ -48,9 +48,25 @@ luk4m4_Undini_framework/
 
 2. Make sure Unreal Engine 5.0+ and Houdini 20.0+ are properly installed on your system
 
-3. Copy the Unreal Engine widget blueprint from the `02_uasset` directory to your Unreal Engine project
-   - The widget blueprint provides a user-friendly interface to run the pipeline directly within Unreal Engine
-   - Place it in your project's Content folder (e.g., `/Game/YourProject/UI/`)
+3. Copy the required Unreal Engine assets from the `02_uasset` directory to your Unreal Engine project:
+
+   a. **Widget Blueprint**:
+   - Copy the widget blueprint to your project's Content folder (e.g., `/Game/YourProject/UI/`)
+   - This provides a user-friendly interface to run the pipeline directly within Unreal Engine
+
+   b. **Template Files**:
+   - Copy `mat_template.uasset` and `mesh_template.uasset` to `/Game/luk4m4_Undini/CSV/`
+   - These templates are required for the CSV DataTables to work correctly
+   - **Important**: If you change the CSV path in the configuration, you must move these template files to the new location
+
+   c. **PCG Blueprint Template**:
+   - Copy `BP_PCG_HD_TEMPLATE.uasset` to `/Game/luk4m4_Undini/BP/`
+   - This template is required for creating PCG graph instances
+
+   d. **Spline Blueprint**:
+   - Copy `BP_CityKit_spline.uasset` to `/Game/luk4m4_Undini/BP/`
+   - **Important**: Do not rename this blueprint, as its name is used to identify splines for export
+   - When placed in the level, the name and asset number of each instance drives the export of splines to Houdini
 
 ### Using the Pipeline
 
@@ -107,6 +123,52 @@ run_houdini_pcg_generation(1)   # Generate PCG data
 - The iteration number is used to track different versions of your procedural content
 - Paths are now relative to the repository root for better portability
 - Error handling is included to make the process more robust
+
+## ⚙️ Customizing Unreal Engine Paths
+
+The framework uses a centralized configuration system in the `999_UE_manager.py` script. You can customize the Unreal Engine paths to match your project structure:
+
+```python
+# Base content path - change this to match your project structure
+UE_BASE_PATH = "/Game/Developers/lukacroisez"
+
+# PCG DataTable paths
+UE_PCG_CSV_PATH = f"{UE_BASE_PATH}/PCG_HD/CSV"
+
+# PCG Blueprint paths
+UE_PCG_TEMPLATE_BP_PATH = f"{UE_BASE_PATH}/PCG_HD/BP/BP_PCG_HD_TEMPLATE.BP_PCG_HD_TEMPLATE"
+UE_PCG_INSTANCE_BP_PATH = f"{UE_BASE_PATH}/PCG_HD/BP/BP_PCG_HD_inst"
+
+# Static Mesh paths
+UE_SIDEWALKS_PATH = f"{UE_BASE_PATH}/Assets/Sidewalks"
+UE_ROADS_PATH = f"{UE_BASE_PATH}/Assets/Road"
+```
+
+Simply modify the `UE_BASE_PATH` to match your project's content structure, or adjust individual paths as needed. After changing these paths, make sure to copy the template files to the corresponding locations in your Unreal Engine project.
+
+## 📝 Release Notes
+
+### Beta v0.1 (Current)
+
+**Status**: This framework is currently in beta. Expect potential bugs and ongoing improvements.
+
+**Key Features**:
+- Complete Houdini-UE5 procedural generation pipeline with widget UI integration
+- Spline-based city generation with automatic PCG graph creation
+- Sidewalks and roads generation with automatic placement in UE level
+- Centralized configuration system for easy path customization
+- Improved error handling and user feedback throughout the pipeline
+- Relative path support for better portability between projects
+
+**Known Limitations**:
+- Templates must be manually copied to the correct UE directories
+- Limited to the specific procedural generation workflow demonstrated
+- Requires specific Houdini .hip files (included in the framework)
+
+**Upcoming Features**:
+- Improved template management and automatic asset copying
+- Support for more diverse procedural generation workflows
+- Enhanced documentation and examples
 
 ## 📄 License
 

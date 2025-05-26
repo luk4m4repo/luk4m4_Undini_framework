@@ -2,8 +2,9 @@ import unreal
 import os
 
 # Define the root directory of the workspace and the export directory for FBX files
-WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-EXPORT_DIR = os.path.join(WORKSPACE_ROOT, '..', '03_GenDatas', 'Dependancies', 'PCG_HD', 'In', 'GZ', 'Mod')  # Relative to repo root
+WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Use the same path structure as other scripts
+EXPORT_DIR = os.path.join(WORKSPACE_ROOT, "03_GenDatas", "Dependancies", "PCG_HD", "In", "GZ", "Mod")  # Absolute path
 
 
 def get_all_static_meshes_in_level():
@@ -20,19 +21,42 @@ def get_all_static_meshes_in_level():
     all_actors = editor_actor_subsystem.get_all_level_actors()
     # Initialize a set to store unique static meshes
     static_meshes = set()
+    # Initialize a counter for debugging
+    total_static_mesh_actors = 0
+    genzone_actors = 0
+    
+    unreal.log(f"Searching for genzone meshes in the current level...")
+    
     # Iterate over all actors in the level
     for actor in all_actors:
         # Only consider StaticMeshActor (not Blueprints, etc)
         if isinstance(actor, unreal.StaticMeshActor):
+            total_static_mesh_actors += 1
+            actor_name = actor.get_actor_label()
+            
+            # Check if the actor name contains 'genzone' (case-insensitive)
+            if 'genzone' in actor_name.lower():
+                genzone_actors += 1
+                unreal.log(f"Found genzone actor: {actor_name}")
+                
             # Get the static mesh component of the actor
             sm_comp = actor.static_mesh_component
             if sm_comp:
                 # Get the static mesh asset
                 mesh = sm_comp.static_mesh
-                # Check if the mesh name contains 'genzone' (case-insensitive)
-                if mesh and 'genzone' in mesh.get_name().lower():
-                    # Add the mesh to the set of unique meshes
-                    static_meshes.add(mesh)
+                if mesh:
+                    mesh_name = mesh.get_name()
+                    # Check if either the mesh name or actor name contains 'genzone' (case-insensitive)
+                    if ('genzone' in mesh_name.lower()) or ('genzone' in actor_name.lower()):
+                        # Add the mesh to the set of unique meshes
+                        static_meshes.add(mesh)
+                        unreal.log(f"Added mesh to export list: {mesh_name} (from actor {actor_name})")
+    
+    # Log debug information
+    unreal.log(f"Total static mesh actors in level: {total_static_mesh_actors}")
+    unreal.log(f"Actors with 'genzone' in name: {genzone_actors}")
+    unreal.log(f"Unique meshes to export: {len(static_meshes)}")
+    
     # Return the list of unique static meshes
     return list(static_meshes)
 

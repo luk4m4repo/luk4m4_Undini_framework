@@ -415,22 +415,22 @@ def run_houdini_sidewalks_roads(iteration_number, houdini_install_path, hip_file
         return None
 
 # Run Houdini sidewalks & roads generation
-result = run_houdini_sidewalks_roads(
-     iteration_number=ITERATION_NUMBER,
-     houdini_install_path=HOUDINI_INSTALL_PATH,
-     hip_file_path=SWR_HIP_FILE_PATH
-)
-unreal.log(f"Houdini sidewalks & roads generation result: {result}")
+# result = run_houdini_sidewalks_roads(
+#     iteration_number=ITERATION_NUMBER,
+#     houdini_install_path=HOUDINI_INSTALL_PATH,
+#     hip_file_path=SWR_HIP_FILE_PATH
+# )
+# unreal.log(f"Houdini sidewalks & roads generation result: {result}")
 
 # Reimport static meshes
-#result = run_script("210_reimport_SM.py", "reimport_folder_static_meshes",
+# result = run_script("210_reimport_SM.py", "reimport_folder_static_meshes",
 #         iteration_number=ITERATION_NUMBER,
 #         fbx_dir=SWR_FBX_OUTPUT_DIR)
-#unreal.log(f"Reimport static meshes result: {result}")
+# unreal.log(f"Reimport static meshes result: {result}")
 
 # Add sidewalks & roads to level (uncomment to use)
-# result = run_script("220_add_SM_to_lvl.py", "add_SM_sidewalks_and_roads_to_level",
-#          iteration_number=ITERATION_NUMBER)
-# unreal.log(f"Add sidewalks & roads result: {result}")
+result = run_script("220_add_SM_to_lvl.py", "add_SM_sidewalks_and_roads_to_level",
+         iteration_number=ITERATION_NUMBER)
+unreal.log(f"Add sidewalks & roads result: {result}")
 
 unreal.log("Script execution completed")

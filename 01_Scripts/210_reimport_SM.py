@@ -57,7 +57,7 @@ def reimport_folder_static_meshes(iteration_number=None, fbx_dir=None):
         # Create a config for each FBX file
         import_configs.append({
             "source_file": os.path.join(fbx_dir, fbx_file),
-            "folder_path": f"/Game/luk4m4_Undini/Assets/PCG_HD/{base_name}",
+            "folder_path": f"/Game/luk4m4_Undini/Assets/{base_name}",
             "asset_name": base_name,
             "name_filter": base_name
         })

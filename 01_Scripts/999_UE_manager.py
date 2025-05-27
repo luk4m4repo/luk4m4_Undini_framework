@@ -171,10 +171,10 @@ def run_houdini_headless(iteration_number, houdini_install_path, hip_file_path, 
             "--rop_pcg_export1_mesh_path", mesh_csv_path,
             "--rop_pcg_export1_mat_path", mat_csv_path,
             "--iteration_number", str(iteration_number),
-            "--switch_bool", str(switch_bool)
+            "--switch_bool", str(switch_bool),
+            "--base_path", splines_base_path  # Add the base_path parameter
             # Remove arguments that aren't recognized by the original script
-            # "--ignore_load_warnings",
-            # "--splines_base_path", splines_base_path
+            # "--ignore_load_warnings"
         ]
         
         # Add file1_path to cmd if provided

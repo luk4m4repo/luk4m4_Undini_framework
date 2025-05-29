@@ -1,41 +1,186 @@
-# luk4m4_Undini_framework
+# 🚦 Undini Pipeline Framework
 
-![Houdini](https://img.shields.io/badge/Houdini-20.0+-orange) ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.0+-blue) ![Python](https://img.shields.io/badge/Python-3.7+-green) ![Version](https://img.shields.io/badge/Version-Beta%20v0.1-red)
+![Houdini](https://img.shields.io/badge/Houdini-20.0+-orange) ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.3.2-blue) ![Python](https://img.shields.io/badge/Python-3.7+-green) ![Beta](https://img.shields.io/badge/Version-Beta%20v0.1-red)
 
-A comprehensive framework that simplifies the procedural generation pipeline between Houdini and Unreal Engine 5. This framework automates the exchange of data between the two applications, streamlining the creation of procedural environments.
+A practical toolkit for automating procedural world-building between Unreal Engine 5 and Houdini. Run the whole pipeline or just the bits you need.
 
-## 🌟 Features
+---
 
-- **Automated Pipeline**: Run the entire procedural generation workflow with a single command
-- **Modular Architecture**: Use individual components or the complete pipeline
-- **Spline-Based Generation**: Export splines from UE5 to drive procedural generation in Houdini
-- **Headless Houdini Processing**: Run Houdini operations without the GUI for faster processing
-- **Seamless Reimporting**: Automatically reimport generated assets back into Unreal Engine
-- **Iteration Support**: Easily manage multiple iterations of your procedural content
+## 🗺️ Pipeline Overview
 
-## 📋 Requirements
+**Choose ONE starting method:**
+- **A. Spline Workflow:**
+  → `000_export_splines_as_json.py` (Export splines from UE to JSON)
+- **B. GenZone Mesh Workflow:**
+  → `010_export_gz_to_mod.py` (Export GenZone meshes from UE to FBX)
 
-- Unreal Engine 5.0 or later
-- Houdini 20.0 or later
-- Python 3.7 or later
+➡️ **After A or B:**
+**→ Make sure the widget checkbox matches your chosen method (A or B)!**
 
-## 🗂️ Repository Structure
+**Then continue:**
+- `100_headless_topnet_PCGHD.py` (Houdini: generate buildings)
+- `110_reimport_datatable.py` (Import CSV as UE datatables)
+- `120_create_pcg_graph.py` (Duplicate PCG Blueprint, spawn in level)
 
+**Alternate branch (after A or B):**
+- `120_create_pcg_graph.py`
+  → `200_headless_topnet_SWR.py` (Houdini: sidewalks/roads)
+  → `210_reimport_SM.py` (Import static meshes)
+  → `220_add_SM_to_lvl.py` (Add meshes to level)
+
+---
+
+---
+
+## 🚀 Quickstart
+
+### 1. Requirements
+- Unreal Engine **5.3.2** or later
+- Houdini **20.0.653** or later
+- Python **3.7+**
+
+### 2. Setup
+```bash
+git clone https://github.com/yourusername/luk4m4_Undini_framework.git
 ```
-luk4m4_Undini_framework/
-├── 01_Scripts/                    # Python scripts for the pipeline
-│   ├── 000_export_splines_as_json.py       # Export splines from UE to JSON
-│   ├── 010_export_gz_to_mod.py             # Export GenZone meshes to FBX
-│   ├── 100_headless_topnet_PCGHD.py        # Run Houdini PCG generation headless
-│   ├── 110_reimport_datatable.py           # Reimport CSV data into UE DataTables
-│   ├── 120_create_pcg_graph.py             # Create PCG graph in UE
-│   ├── 200_headless_topnet_SWR.py          # Generate sidewalks & roads in Houdini
-│   ├── 210_reimport_SM.py                  # Reimport static meshes into UE
-│   ├── 220_add_SM_to_lvl.py                # Add static meshes to UE level
-│   ├── 991_HOUDINI_import_splines_from_json.py  # Import splines in Houdini
-│   └── 999_UE_manager.py                   # Main pipeline manager
-└── README.md                      # Documentation
+- Copy the assets from `02_uasset/` into your Unreal project as described below.
+
+### 3. Asset Placement
+- **Widget Blueprint** → `/Game/YourProject/UI/`
+- **CSV/DataTable Templates** → `/Game/luk4m4_Undini/CSV/`
+- **PCG Blueprint Template** → `/Game/luk4m4_Undini/BP/`
+- **Spline Blueprint** → `/Game/luk4m4_Undini/BP/` (do **not** rename)
+
+---
+
+## 🧩 Main Scripts (in pipeline order)
+
+| Step | Script | What it Does |
+|------|-------------------------------|------------------------------------------------------|
+| 1    | `000_export_splines_as_json.py` | Export splines from UE to JSON                      |
+| 2    | `010_export_gz_to_mod.py`       | Export GenZone meshes from UE to FBX                |
+| 3    | `100_headless_topnet_PCGHD.py`  | Run Houdini (headless) to generate building data    |
+| 4    | `110_reimport_datatable.py`     | Import CSVs as UE DataTables                        |
+| 5    | `120_create_pcg_graph.py`       | Duplicate PCG Blueprint, spawn in level             |
+| 6    | `200_headless_topnet_SWR.py`    | Houdini (headless) for sidewalks & roads            |
+| 7    | `210_reimport_SM.py`            | Import/reimport static meshes from FBX              |
+| 8    | `220_add_SM_to_lvl.py`          | Add sidewalk/road meshes to the level               |
+
+- `999_UE_manager.py`: Orchestrates the whole show. Run all steps or just one.
+
+---
+
+## 📂 File & Asset Flow
+
+```plaintext
+[Splines / Meshes in UE]
+   │
+   ├─▶ (JSON/FBX export)
+   │
+[Houdini: PCG, sidewalks, roads]
+   │
+   ├─▶ (CSV/FBX output)
+   │
+[Reimport to Unreal]
+   │
+   ├─▶ (Add to level, organize)
 ```
+
+- All files are named by iteration (e.g., `mesh_001.csv`, `road_001.fbx`).
+- Stick to the naming conventions—automation relies on it.
+
+---
+
+## 🤖 How to Use
+
+### The Widget (Recommended)
+1. Open your Unreal project.
+2. Find the Undini Framework widget in your Content Browser.
+3. Set your Houdini path, iteration number, and any other needed settings.
+4. Click buttons to run steps—watch the log for progress and errors.
+
+### Python Power Users
+- Import and run scripts directly, or use `999_UE_manager.py` to automate the lot.
+- Each script logs its actions (with emoji for clarity!).
+
+---
+
+## 🏗️ Principles
+- **Automate everything.**
+- **Name things right.**
+- **Keep scripts modular.**
+- **Minimal manual fiddling.**
+- **Logs and folders keep you sane.**
+
+---
+
+## 🔄 Using Your Own Houdini HIP Files
+
+**Note:** The Houdini `.hip` files required for this pipeline are NOT included in this repository. This is due to licensing, size, or project-specific reasons.
+
+### How to Use Your Own Houdini Files
+
+You can use your own Houdini `.hip` files for city, sidewalk, and road generation. **Templates** are provided in `../04_Houdini/` with all required nodes and parameters—start here if unsure!
+
+**Where to put HIP files:**
+- Place your `.hip` files in `./04_Houdini/` (or provide the full path in the widget/script).
+
+**For City (PCGHD):**
+- A TOP network (`/obj/geo1/topnet`)
+- `/obj/geo1/pcg_export1` with `file_mesh` and `file_mat` parameters
+- `/obj/geo1/python_import_splines_from_json` with `iteration_number` and `base_path`
+- `/obj/geo1/switch_bool` to switch input type
+- Outputs: mesh/material CSVs
+
+**For Sidewalks/Roads (SWR):**
+- A TOP network (`/obj/geo1/topnet`)
+- `/obj/geo1/rop_fbx_road` and `/obj/geo1/rop_fbx_sidewalks` with `sopoutput`
+- `/obj/geo1/python_import_splines_from_json` with `iteration_number` and `base_path`
+- `/obj/geo1/switch_bool` to control network
+- Outputs: road/sidewalk FBXs
+
+**How to reference:**
+- In the widget or script, set the HIP file path before running the Houdini step.
+
+**Troubleshooting:**
+- Errors about missing nodes/parameters? Compare your HIP to the template and this doc.
+- Check logs for the exact names the pipeline is trying to set.
+
+1. **Create or obtain your own Houdini `.hip` files** for procedural generation (buildings, sidewalks, roads, etc.).
+2. **Place your HIP files** wherever you like—ideally in a dedicated folder in your project (e.g., `./04_Houdini/` or outside the repo).
+3. **Reference your HIP files in the pipeline:**
+   - The relevant scripts (`100_headless_topnet_PCGHD.py`, `200_headless_topnet_SWR.py`) accept the HIP file path as a command-line argument or via the pipeline config.
+   - In the widget or script call, specify your `.hip` file path using the appropriate parameter or field.
+   - Example (Python):
+     ```python
+     run_houdini_headless(iteration_number=1, hip_file="/path/to/your_file.hip", ...)
+     ```
+   - Example (Widget):
+     - Set the HIP file path in the widget’s configuration field before running the relevant step.
+
+### What does the pipeline expect from your HIP files?
+- **Inputs:**
+  - The HIP file should expect inputs (FBX, JSON, etc.) matching the outputs of the Unreal export scripts.
+  - Node names and file paths should match those referenced in the pipeline scripts/config.
+- **Outputs:**
+  - The HIP file should output CSV or FBX files as expected by the next pipeline step (see docs for details).
+- **Node Structure:**
+  - The pipeline assumes certain TOP nodes or output nodes exist in your HIP file (e.g., `/obj/topnet1`).
+  - If you use different node names, update the pipeline config or script arguments accordingly.
+
+### Tips
+- Start from the example config/scripts and adapt paths/names to your setup.
+- If your HIP file structure is different, you may need to adjust the pipeline scripts or their arguments.
+- Check the script and widget logs for errors about missing nodes or files—these usually indicate a mismatch between your HIP file and the expected structure.
+
+---
+
+## 📝 Release Status
+- **Beta**: Expect bugs, improvements, and the occasional surprise.
+- See `luk4m4_Undini_doc_complete.md` for deep-dive docs.
+
+## 📄 License
+MIT. See LICENSE.
 
 ## 🚀 Getting Started
 

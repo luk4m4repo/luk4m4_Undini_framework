@@ -1,17 +1,28 @@
-# 🚦 Undini Pipeline: Complete Documentation
+# Undini Pipeline: Complete Documentation
 
-## 🗺️ Pipeline Map
+## Pipeline Overview
 
-```mermaid
-flowchart LR
-    A[000_export_splines_as_json.py\n:splines to JSON] --> B[010_export_gz_to_mod.py\n:GenZone meshes to FBX]
-    B --> C[100_headless_topnet_PCGHD.py\n:Houdini PCG (buildings)]
-    C --> D[110_reimport_datatable.py\n:CSV to UE datatables]
-    D --> E[120_create_pcg_graph.py\n:PCG graph Blueprint]
-    E --> F[200_headless_topnet_SWR.py\n:Houdini (sidewalks/roads)]
-    F --> G[210_reimport_SM.py\n:FBX to UE static meshes]
-    G --> H[220_add_SM_to_lvl.py\n:Add meshes to level]
-```
+**Choose ONE starting method:**
+- **A. Spline Workflow:**
+  → `000_export_splines_as_json.py` (Export splines from UE to JSON)
+- **B. GenZone Mesh Workflow:**
+  → `010_export_gz_to_mod.py` (Export GenZone meshes from UE to FBX)
+
+➡️ **After A or B:**
+**→ Make sure the widget checkbox matches your chosen method (A or B)!**
+
+**Then continue:**
+- `100_headless_topnet_PCGHD.py` (Houdini: generate buildings)
+- `110_reimport_datatable.py` (Import CSV as UE datatables)
+- `120_create_pcg_graph.py` (Duplicate PCG Blueprint, spawn in level)
+
+**Alternate branch (after A or B):**
+- `120_create_pcg_graph.py`
+  → `200_headless_topnet_SWR.py` (Houdini: sidewalks/roads)
+  → `210_reimport_SM.py` (Import static meshes)
+  → `220_add_SM_to_lvl.py` (Add meshes to level)
+
+---
 
 ## Table of Contents
 

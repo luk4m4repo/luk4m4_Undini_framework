@@ -1,11 +1,11 @@
-# 🚦 Undini Pipeline: Quick Reference
+# Undini Pipeline: Quick Reference
 
 ## What is this?
 A set of Python scripts that automate the process of exporting, processing, and importing assets (meshes, splines, blueprints) between Unreal Engine and Houdini, making procedural content generation and asset management much faster and more reliable.
 
 ---
 
-## 🗺️ Pipeline Overview
+## Pipeline Overview
 
 **Choose ONE starting method:**
 - **A. Spline Workflow:**
@@ -44,7 +44,7 @@ A set of Python scripts that automate the process of exporting, processing, and 
 
 ---
 
-## 🛠️ Using Your Own Houdini Files
+## Using Your Own Houdini Files
 
 You can use custom Houdini `.hip` files for city, sidewalk, and road generation.
 

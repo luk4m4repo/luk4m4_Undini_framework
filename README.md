@@ -1,4 +1,4 @@
-# 🚦 Undini Pipeline Framework
+# Undini Pipeline Framework
 
 ![Houdini](https://img.shields.io/badge/Houdini-20.0+-orange) ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.3.2-blue) ![Python](https://img.shields.io/badge/Python-3.7+-green) ![Beta](https://img.shields.io/badge/Version-Beta%20v0.1-red)
 
@@ -8,7 +8,7 @@ A practical toolkit for automating procedural world-building between Unreal Engi
 
 ---
 
-## 🗺️ Pipeline Overview
+## Pipeline Overview
 
 **Choose ONE starting method:**
 - **A. Spline Workflow:**
@@ -34,7 +34,7 @@ A practical toolkit for automating procedural world-building between Unreal Engi
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 ### 1. Requirements
 - Unreal Engine **5.3.2** or later

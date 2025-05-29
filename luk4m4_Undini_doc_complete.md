@@ -34,7 +34,7 @@ flowchart LR
 
 ---
 
-## 🛠️ How to Use with Your Own Houdini Files
+## How to Use with Your Own Houdini Files
 
 You can use your own Houdini `.hip` files for city, sidewalk, and road generation. This pipeline is designed for flexibility, but your HIP files **must** follow certain conventions to work out of the box.
 

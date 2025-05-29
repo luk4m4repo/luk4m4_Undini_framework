@@ -55,7 +55,7 @@ git clone https://github.com/yourusername/luk4m4_Undini_framework.git
 
 ---
 
-## 🧩 Main Scripts (in pipeline order)
+## Main Scripts (in pipeline order)
 
 | Step | Script | What it Does |
 |------|-------------------------------|------------------------------------------------------|
@@ -93,7 +93,7 @@ git clone https://github.com/yourusername/luk4m4_Undini_framework.git
 
 ---
 
-## 🤖 How to Use
+## How to Use
 
 ### The Widget (Recommended)
 1. Open your Unreal project.
@@ -107,7 +107,7 @@ git clone https://github.com/yourusername/luk4m4_Undini_framework.git
 
 ---
 
-## 🏗️ Principles
+## Principles
 - **Automate everything.**
 - **Name things right.**
 - **Keep scripts modular.**
@@ -116,7 +116,7 @@ git clone https://github.com/yourusername/luk4m4_Undini_framework.git
 
 ---
 
-## 🔄 Using Your Own Houdini HIP Files
+## Using Your Own Houdini HIP Files
 
 **Note:** The Houdini `.hip` files required for this pipeline are NOT included in this repository. This is due to licensing, size, or project-specific reasons.
 
@@ -177,14 +177,7 @@ You can use your own Houdini `.hip` files for city, sidewalk, and road generatio
 
 ---
 
-## 📝 Release Status
-- **Beta**: Expect bugs, improvements, and the occasional surprise.
-- See `luk4m4_Undini_doc_complete.md` for deep-dive docs.
-
-## 📄 License
-MIT. See LICENSE.
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Setup
 
@@ -253,7 +246,7 @@ call_export_splines_to_json(1)  # Export splines
 run_houdini_pcg_generation(1)   # Generate PCG data
 ```
 
-## 🔄 Pipeline Workflow
+## Pipeline Workflow
 
 1. **Export Splines**: Exports spline components from UE to JSON
 2. **Export GenZone Meshes**: Exports GenZone meshes from UE to FBX
@@ -293,7 +286,7 @@ UE_ROADS_PATH = f"{UE_BASE_PATH}/Assets/Road"
 
 Simply modify the `UE_BASE_PATH` to match your project's content structure, or adjust individual paths as needed. After changing these paths, make sure to copy the template files to the corresponding locations in your Unreal Engine project.
 
-## 📝 Release Notes
+## Release Notes
 
 ### Beta v0.1 (Current)
 
@@ -313,10 +306,5 @@ Simply modify the `UE_BASE_PATH` to match your project's content structure, or a
 - Requires specific Houdini .hip files (included in the framework)
 
 **Upcoming Features**:
-- Improved template management and automatic asset copying
+- UE embedded plugin
 - Support for more diverse procedural generation workflows
-- Enhanced documentation and examples
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.

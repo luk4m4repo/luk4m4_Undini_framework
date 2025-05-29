@@ -21,7 +21,8 @@ SWITCH_BOOL = 0
 
 # Unreal Engine paths
 UE_BASE_PATH = "/Game/luk4m4_Undini"
-UE_PCG_TEMPLATE_BP_PATH = f"{UE_BASE_PATH}/BP/BP_PCG_HD_TEMPLATE"
+# Path includes class name at the end for compatibility with the PCG graph script
+UE_PCG_TEMPLATE_BP_PATH = f"{UE_BASE_PATH}/BP/BP_PCG_HD_TEMPLATE.BP_PCG_HD_TEMPLATE"
 UE_SPLINE_BP_PATH = f"{UE_BASE_PATH}/BP/BP_CityKit_spline"
 UE_MESH_TEMPLATE_PATH = f"{UE_BASE_PATH}/CSV/mesh_template"
 UE_MAT_TEMPLATE_PATH = f"{UE_BASE_PATH}/CSV/mat_template"

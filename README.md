@@ -4,6 +4,8 @@
 
 A practical toolkit for automating procedural world-building between Unreal Engine 5 and Houdini. Run the whole pipeline or just the bits you need.
 
+### IMPORTANT: This framework assumes that you already have your Houdini generation file(s), that you have your elements to instantiate in PCG, and that you have already used the PCG procedural generation tools in Unreal Engine. If this is not the case, I suggest you read the detailed documentation here : `luk4m4_Undini_doc_complete.md`.
+
 ---
 
 ## 🗺️ Pipeline Overview

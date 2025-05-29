@@ -76,11 +76,11 @@ def get_all_static_meshes_in_level():
 
 def export_static_mesh_to_fbx(static_mesh, export_dir, iteration_number):
     """
-    Exports a given static mesh to FBX format with a filename that includes the mesh name and iteration number.
+    Exports a given static mesh to FBX format with a standardized filename format.
     
     This function handles the actual export of each GenZone mesh to FBX format. The exported FBX files
     will be used by Houdini when switch_bool is set to 1 in the pipeline. The filename format
-    (meshname_iterationnumber.fbx) is important for the rest of the pipeline to work correctly.
+    (SM_genzones_PCG_HD_[iteration_number].fbx) is important for the rest of the pipeline to work correctly.
     
     Args:
         static_mesh: The Unreal Engine static mesh asset to export
@@ -90,12 +90,12 @@ def export_static_mesh_to_fbx(static_mesh, export_dir, iteration_number):
     Returns:
         bool: True if the export was successful, False otherwise
     """
-    # First, get the name of the mesh we're exporting
+    # First, get the name of the mesh we're exporting (for logging purposes only)
     mesh_name = static_mesh.get_name()
     
     # Create the full path where we'll save the FBX file
-    # The naming convention meshname_iterationnumber.fbx is important for the pipeline
-    export_path = os.path.join(export_dir, f"{mesh_name}_{iteration_number}.fbx")
+    # Using the standardized naming convention: SM_genzones_PCG_HD_[iteration_number].fbx
+    export_path = os.path.join(export_dir, f"SM_genzones_PCG_HD_{iteration_number}.fbx")
     unreal.log(f"Preparing to export {mesh_name} to {export_path}")
     
     # Configure the FBX export options for best compatibility with Houdini
@@ -146,10 +146,11 @@ def export_static_mesh_to_fbx(static_mesh, export_dir, iteration_number):
 
 def main(iteration_number=0, export_dir=None):
     """
-    Main entry point: exports all 'genzone' static meshes in the current level to FBX files.
+    Main entry point: exports all 'genzone' static meshes in the current level to a single FBX file.
     
     This is the second step in our pipeline - after exporting splines, we need to export the GenZone meshes
     that will be used by Houdini for procedural generation when switch_bool is set to 1.
+    The exported file will be named SM_genzones_PCG_HD_[iteration_number].fbx.
     
     Args:
         iteration_number (int): The current iteration number for file naming (default: 0)

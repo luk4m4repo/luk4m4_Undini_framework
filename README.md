@@ -48,7 +48,7 @@ git clone https://github.com/yourusername/luk4m4_Undini_framework.git
 - Copy the assets from `02_uasset/` into your Unreal project as described below.
 
 ### 3. Asset Placement
-- **Widget Blueprint** → `/Game/YourProject/UI/`
+- **Widget Blueprint** → `/Game/luk4m4_Undini/UI/`
 - **CSV/DataTable Templates** → `/Game/luk4m4_Undini/CSV/`
 - **PCG Blueprint Template** → `/Game/luk4m4_Undini/BP/`
 - **Spline Blueprint** → `/Game/luk4m4_Undini/BP/` (do **not** rename)

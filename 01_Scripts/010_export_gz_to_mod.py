@@ -76,26 +76,38 @@ def get_all_static_meshes_in_level():
 
 def export_static_mesh_to_fbx(static_mesh, export_dir, iteration_number):
     """
-    Exports a given static mesh to FBX format with a standardized filename format.
+    Exports a given static mesh to FBX format with a filename based on the mesh name.
     
     This function handles the actual export of each GenZone mesh to FBX format. The exported FBX files
-    will be used by Houdini when switch_bool is set to 1 in the pipeline. The filename format
-    (SM_genzones_PCG_HD_[iteration_number].fbx) is important for the rest of the pipeline to work correctly.
+    will be used by Houdini when switch_bool is set to 1 in the pipeline. Each mesh is exported to its own file
+    inside a folder named SM_genzones_PCG_HD_{iteration_number}.
     
     Args:
         static_mesh: The Unreal Engine static mesh asset to export
         export_dir: Directory where the FBX file will be saved
-        iteration_number: The current iteration number to append to the filename
+        iteration_number: The current iteration number for the folder name
         
     Returns:
         bool: True if the export was successful, False otherwise
     """
-    # First, get the name of the mesh we're exporting (for logging purposes only)
+    # First, get the name of the mesh we're exporting
     mesh_name = static_mesh.get_name()
     
-    # Create the full path where we'll save the FBX file
-    # Using the standardized naming convention: SM_genzones_PCG_HD_[iteration_number].fbx
-    export_path = os.path.join(export_dir, f"SM_genzones_PCG_HD_{iteration_number}.fbx")
+    # Create the folder path where we'll save all the FBX files
+    folder_name = f"SM_genzones_PCG_HD_{iteration_number}"
+    folder_path = os.path.join(export_dir, folder_name)
+    
+    # Make sure the folder exists
+    if not os.path.exists(folder_path):
+        try:
+            os.makedirs(folder_path, exist_ok=True)
+            unreal.log(f"📁 Created export folder: {folder_path}")
+        except Exception as e:
+            unreal.log_error(f"❌ Couldn't create export folder '{folder_path}'. Error: {str(e)}")
+            return False
+    
+    # Create the full path where we'll save this specific mesh
+    export_path = os.path.join(folder_path, f"{mesh_name}.fbx")
     unreal.log(f"Preparing to export {mesh_name} to {export_path}")
     
     # Configure the FBX export options for best compatibility with Houdini
@@ -143,6 +155,105 @@ def export_static_mesh_to_fbx(static_mesh, export_dir, iteration_number):
         unreal.log_error(f"   Error details: {str(e)}")
         return False
 
+def export_actor_transforms_to_json(actors, export_dir, iteration_number):
+    """
+    Exports the transforms (location, rotation, scale) of the provided actors to a JSON file.
+    
+    Args:
+        actors: List of actors whose transforms should be exported
+        export_dir: Directory where the JSON file will be saved
+        iteration_number: The current iteration number for file naming
+        
+    Returns:
+        bool: True if the export was successful, False otherwise
+    """
+    import json
+    
+    # Create the folder path where we'll save all files
+    folder_name = f"SM_genzones_PCG_HD_{iteration_number}"
+    folder_path = os.path.join(export_dir, folder_name)
+    
+    # Make sure the folder exists
+    if not os.path.exists(folder_path):
+        try:
+            os.makedirs(folder_path, exist_ok=True)
+            unreal.log(f"📁 Created export folder: {folder_path}")
+        except Exception as e:
+            unreal.log_error(f"❌ Couldn't create export folder '{folder_path}'. Error: {str(e)}")
+            return False
+    
+    # Create the full path where we'll save the JSON file
+    json_filename = "transforms.json"
+    json_path = os.path.join(folder_path, json_filename)
+    unreal.log(f"Preparing to export transforms of {len(actors)} actors to {json_path}")
+    
+    # Create a dictionary to store the transforms
+    transforms_data = {
+        "actors": []
+    }
+    
+    # Extract transform data from each actor
+    for actor in actors:
+        actor_name = actor.get_actor_label()
+        
+        # Get the static mesh component
+        sm_comp = actor.static_mesh_component
+        if not sm_comp:
+            unreal.log_warning(f"⚠️ Actor {actor_name} has no static mesh component, skipping...")
+            continue
+            
+        # Get the mesh name
+        mesh = sm_comp.static_mesh
+        if not mesh:
+            unreal.log_warning(f"⚠️ Actor {actor_name} has no static mesh, skipping...")
+            continue
+            
+        mesh_name = mesh.get_name()
+        
+        # Get the transform
+        transform = sm_comp.get_relative_transform()
+        location = transform.translation
+        rotation = transform.rotation.rotator()
+        scale = transform.scale3d
+        
+        # Add to our data structure
+        actor_data = {
+            "actor_name": actor_name,
+            "mesh_name": mesh_name,
+            "transform": {
+                "location": {
+                    "x": location.x,
+                    "y": location.y,
+                    "z": location.z
+                },
+                "rotation": {
+                    "pitch": rotation.pitch,
+                    "yaw": rotation.yaw,
+                    "roll": rotation.roll
+                },
+                "scale": {
+                    "x": scale.x,
+                    "y": scale.y,
+                    "z": scale.z
+                }
+            }
+        }
+        
+        transforms_data["actors"].append(actor_data)
+        unreal.log(f"Added transform data for actor: {actor_name}")
+    
+    try:
+        # Write the JSON file
+        with open(json_path, 'w') as json_file:
+            json.dump(transforms_data, json_file, indent=4)
+        
+        unreal.log(f"🎉 Successfully exported transforms of {len(transforms_data['actors'])} actors to {json_path}!")
+        return True
+    except Exception as e:
+        unreal.log_error(f"❌ An error occurred while exporting transforms to JSON:")
+        unreal.log_error(f"   Error details: {str(e)}")
+        return False
+
 
 def main(iteration_number=0, export_dir=None):
     """
@@ -163,7 +274,8 @@ def main(iteration_number=0, export_dir=None):
     result = {
         'success_count': 0,
         'total_count': 0,
-        'export_dir': None
+        'export_dir': None,
+        'export_folder': None
     }
     
     # Determine which export directory to use
@@ -196,6 +308,18 @@ def main(iteration_number=0, export_dir=None):
     if not meshes:
         unreal.log_warning("⚠️ No GenZone meshes found in the current level. Nothing to export!")
         return result
+
+        # Find all GenZone actors in the current level
+    unreal.log("\n🔍 Looking for GenZone actors in the current level...")
+    genzone_actors = []
+    for actor in unreal.EditorLevelLibrary.get_all_level_actors():
+        if isinstance(actor, unreal.StaticMeshActor) and 'genzone' in actor.get_actor_label().lower():
+            genzone_actors.append(actor)
+    
+    # Export transforms to JSON
+    if genzone_actors:
+        unreal.log(f"\n📊 Exporting transforms of {len(genzone_actors)} GenZone actors to JSON...")
+        export_actor_transforms_to_json(genzone_actors, export_dir, iteration_number)
     
     # Start the export process
     unreal.log(f"\n📦 Starting export of {len(meshes)} GenZone meshes to FBX format...")
@@ -211,11 +335,18 @@ def main(iteration_number=0, export_dir=None):
     # Update the result with the success count
     result['success_count'] = success_count
     
+    # Create the folder path for reference in the summary
+    folder_name = f"SM_genzones_PCG_HD_{iteration_number}"
+    folder_path = os.path.join(export_dir, folder_name)
+    
+    # Store the folder path in the result
+    result['export_folder'] = folder_path
+    
     # Summarize the results
     if success_count == len(meshes):
-        unreal.log(f"\n✅ Export complete: All {success_count} meshes successfully exported to {export_dir}")
+        unreal.log(f"\n✅ Export complete: All {success_count} meshes successfully exported to folder:\n   {folder_path}")
     else:
-        unreal.log(f"\n⚠️ Export partially complete: {success_count}/{len(meshes)} meshes exported to {export_dir}")
+        unreal.log(f"\n⚠️ Export partially complete: {success_count}/{len(meshes)} meshes exported to folder:\n   {folder_path}")
         if success_count == 0:
             unreal.log_error("❌ All exports failed! Check the log for error details.")
     
